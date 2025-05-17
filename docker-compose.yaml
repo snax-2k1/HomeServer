@@ -51,7 +51,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
-      - PLEX_CLAIM=claim-gxea-kDifJfv1QQSD9Zs
+      - PLEX_CLAIM=claim-rHhz31yguLYgW9acaB2a
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
     volumes:
