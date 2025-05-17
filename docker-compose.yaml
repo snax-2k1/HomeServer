@@ -220,6 +220,12 @@ services:
       - TZ=America/Los_Angeles
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
+      - serverPort=8266
+      - webUIPort=8265
+      - internalNode=true
+      - inContainer=true
+      - ffmpegVersion=7
+      - nodeName=MyInternalNode
     volumes:
       - /mnt/Datapool1/htpc/tdarr/configs:/app/configs
       - /mnt/Datapool1/htpc/tdarr/server:/app/server
