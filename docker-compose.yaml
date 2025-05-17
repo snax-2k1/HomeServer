@@ -208,3 +208,34 @@ services:
     runtime: nvidia
     networks:
       - app_network
+
+  # Tdarr
+  tdarr:
+    image: ghcr.io/haveagitgat/tdarr:latest
+    container_name: tdarr
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      - /mnt/Datapool1/htpc/tdarr/configs:/app/configs
+      - /mnt/Datapool1/htpc/tdarr/server:/app/server
+      - /mnt/Datapool1/htpc/tdarr/logs:/app/logs
+      - /mnt/Datapool1/htpc/media/movies:/media/movies:shared
+      - /mnt/Datapool1/htpc/media/tv:/media/tv:shared
+      - /mnt/Datapool1/htpc/tdarr/transcode_cache:/temp
+    ports:
+      - 8265:8265 # Tdarr Server port
+      - 8266:8266 # Tdarr WebUI port
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+    runtime: nvidia
+    networks:
+      - app_network
