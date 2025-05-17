@@ -1,5 +1,27 @@
 version: "3"
+
+# Main services network
+networks:
+  app_network:
+    driver: bridge
+
 services:
+  # Nginx Proxy Manager
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - '80:80'      # HTTP
+      - '443:443'    # HTTPS
+      - '81:81'      # Admin panel
+    volumes:
+      - /mnt/Datapool1/htpc/nginx/data:/data
+      - /mnt/Datapool1/htpc/nginx/letsencrypt:/etc/letsencrypt
+    networks:
+      - app_network
+
+  # SABnzbd
   sabnzbd:
     image: linuxserver/sabnzbd
     container_name: sabnzbd
@@ -17,12 +39,14 @@ services:
     ports:
       - 8080:8080
     restart: unless-stopped
+    networks:
+      - app_network
 
+  # Plex
   plex:
     image: plexinc/pms-docker
     container_name: plex
     restart: unless-stopped
-    network_mode: host
     environment:
       - PUID=1000
       - PGID=1000
@@ -36,6 +60,16 @@ services:
       - /mnt/Datapool1/htpc/media/movies:/movies:shared
       - /mnt/Datapool1/htpc/media/tv:/tv:shared
       - /mnt/Datapool1/htpc/media/music:/music:shared
+    ports:
+      - 32400:32400/tcp # Primary Plex port
+      - 3005:3005/tcp   # Companion control
+      - 8324:8324/tcp   # Roku via Plex Companion
+      - 32469:32469/tcp # Plex DLNA Server
+      - 1900:1900/udp   # Plex DLNA Server discovery
+      - 32410:32410/udp # Plex Companion discovery
+      - 32412:32412/udp # Plex Companion
+      - 32413:32413/udp # Plex Companion
+      - 32414:32414/udp # Plex Companion
     devices:
       - /dev/nvidia0:/dev/nvidia0
       - /dev/nvidiactl:/dev/nvidiactl
@@ -43,7 +77,10 @@ services:
       - /dev/nvidia-uvm:/dev/nvidia-uvm
       - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
     runtime: nvidia
+    networks:
+      - app_network
     
+  # Frigate
   frigate:
     image: ghcr.io/blakeblackshear/frigate:stable
     container_name: frigate
@@ -80,7 +117,10 @@ services:
       - /dev/nvidia-uvm:/dev/nvidia-uvm
       - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
     runtime: nvidia
+    networks:
+      - app_network
     
+  # Prowlarr
   prowlarr:
     image: linuxserver/prowlarr:latest
     container_name: prowlarr
@@ -93,53 +133,34 @@ services:
     ports:
       - 9696:9696
     restart: unless-stopped
-
-  sonarr:
-    image: linuxserver/sonarr
-    container_name: sonarr
+    networks:
+      - app_network
+      
+  # Portainer
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
     restart: unless-stopped
-    ports:
-      - 8989:8989
-    volumes:    
-      - /mnt/Datapool1/htpc/sonarr/config:/config
-      - /mnt/Datapool1/htpc/media/movies:/movies
-      - /mnt/Datapool1/htpc/media/tv:/tv
-      - /mnt/Datapool1/htpc/media/music:/music
-      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
-      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
+    security_opt:
+      - no-new-privileges:true
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=America/Los_Angeles
-
-  radarr:
-    image: linuxserver/radarr
-    container_name: radarr
-    restart: unless-stopped
-    ports:
-      - 7878:7878
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
     volumes:
-      - /mnt/Datapool1/htpc/radarr/config:/config
-      - /mnt/Datapool1/htpc/media/movies:/movies
-      - /mnt/Datapool1/htpc/media/tv:/tv
-      - /mnt/Datapool1/htpc/media/music:/music
-      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
-      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
-    environment:
-      - PUID=1000
-      - PGID=150
-      - TZ=America/Los_Angeles
-
-  portainer:
-    image: portainer/portainer
-    container_name: portainer
-    restart: unless-stopped
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/Datapool1/portainer:/data
     ports:
       - 9000:9000
-    volumes:
-      - /mnt/Datapool1/portainer:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - PUID=1000
-      - PGID=150
-      - TZ=America/Los_Angeles
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+    runtime: nvidia
+    networks:
+      - app_network
