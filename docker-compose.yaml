@@ -1,3 +1,4 @@
+version: "3"
 services:
   sabnzbd:
     image: linuxserver/sabnzbd
@@ -8,9 +9,9 @@ services:
       - TZ=America/Los_Angeles
     volumes:
       - /mnt/Datapool1/htpc/sabnzbd/config:/config
-      - /mnt/Datapool1/htpc/media/movies:/movies
-      - /mnt/Datapool1/htpc/media/tv:/tv
-      - /mnt/Datapool1/htpc/media/music:/music
+      - /mnt/Datapool1/htpc/media/movies:/movies:shared
+      - /mnt/Datapool1/htpc/media/tv:/tv:shared
+      - /mnt/Datapool1/htpc/media/music:/music:shared
       - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
       - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
     ports:
@@ -32,9 +33,9 @@ services:
     volumes:
       - /mnt/Datapool1/htpc/plex/config:/config
       - /mnt/Datapool1/htpc/plex/transcode:/transcode
-      - /mnt/Datapool1/htpc/media/movies:/movies
-      - /mnt/Datapool1/htpc/media/tv:/tv
-      - /mnt/Datapool1/htpc/media/music:/music
+      - /mnt/Datapool1/htpc/media/movies:/movies:shared
+      - /mnt/Datapool1/htpc/media/tv:/tv:shared
+      - /mnt/Datapool1/htpc/media/music:/music:shared
     devices:
       - /dev/nvidia0:/dev/nvidia0
       - /dev/nvidiactl:/dev/nvidiactl
@@ -44,7 +45,7 @@ services:
     runtime: nvidia
     
   frigate:
-    image: ghcr.io/blakeblackshear/frigate:stable
+    image: blakeblackshear/frigate:stable
     container_name: frigate
     restart: unless-stopped
     privileged: true  # Required for USB access and detection
@@ -58,6 +59,9 @@ services:
     volumes:
       - /mnt/Datapool1/htpc/frigate/config:/config
       - /mnt/Datapool1/htpc/frigate/media:/media/frigate
+      - /mnt/Datapool1/htpc/media/movies:/movies:shared
+      - /mnt/Datapool1/htpc/media/tv:/tv:shared
+      - /mnt/Datapool1/htpc/media/music:/music:shared
       - /etc/localtime:/etc/localtime:ro
       - type: tmpfs  # Recommended for detection
         target: /tmp/cache
