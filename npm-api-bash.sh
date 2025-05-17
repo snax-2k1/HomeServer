@@ -7,7 +7,6 @@ NPM_URL="http://192.168.3.53:81
 DOMAIN="fatunicorns.club"
 NPM_EMAIL="johnny.johnson2k1@gmail.com"
 NPM_PASSWORD="bigj2k!!"
-
 # Color output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -36,6 +35,7 @@ get_auth_token() {
 # Function to request Let's Encrypt certificate
 request_letsencrypt_certificate() {
     local domain_name=$1
+    local cert_id=0
     
     echo -e "${YELLOW}Requesting Let's Encrypt certificate for ${domain_name}...${NC}"
     
@@ -57,13 +57,14 @@ EOF
         -d "$JSON_DATA")
     
     if echo "$RESPONSE" | grep -q "\"created_on\""; then
-        CERT_ID=$(echo "$RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
-        echo -e "${GREEN}Successfully requested Let's Encrypt certificate for ${domain_name} (ID: ${CERT_ID})${NC}"
-        return $CERT_ID
+        cert_id=$(echo "$RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+        echo -e "${GREEN}Successfully requested Let's Encrypt certificate for ${domain_name} (ID: ${cert_id})${NC}"
     else
         echo -e "${RED}Failed to request Let's Encrypt certificate for ${domain_name}. Response: ${RESPONSE}${NC}"
-        return 0
+        cert_id=0
     fi
+    
+    echo "$cert_id"
 }
 
 # Function to get all certificates
@@ -79,20 +80,21 @@ get_certificates() {
 # Function to find certificate ID by domain
 find_certificate_id() {
     local domain_name=$1
+    local cert_id=0
     
     CERTS_RESPONSE=$(curl -s -X GET "${NPM_URL}/api/nginx/certificates" \
         -H "Authorization: Bearer ${TOKEN}")
     
     # Check if the domain exists in any certificate
     if echo "$CERTS_RESPONSE" | grep -q "\"domain_names\":\[\"${domain_name}\""; then
-        CERT_ID=$(echo "$CERTS_RESPONSE" | grep -B 5 "\"domain_names\":\[\"${domain_name}\"" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
-        echo -e "${GREEN}Found existing certificate for ${domain_name} (ID: ${CERT_ID})${NC}"
-        return $CERT_ID
+        cert_id=$(echo "$CERTS_RESPONSE" | grep -B 5 "\"domain_names\":\[\"${domain_name}\"" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+        echo -e "${GREEN}Found existing certificate for ${domain_name} (ID: ${cert_id})${NC}"
     else
         echo -e "${YELLOW}No certificate found for ${domain_name}. Will request a new one.${NC}"
-        request_letsencrypt_certificate "${domain_name}"
-        return $?
+        cert_id=$(request_letsencrypt_certificate "${domain_name}")
     fi
+    
+    echo "$cert_id"
 }
 
 # Function to create a proxy host
@@ -119,11 +121,11 @@ create_proxy_host() {
     fi
     
     # Find or request certificate
-    find_certificate_id "${domain_name}"
-    CERT_ID=$?
+    CERT_ID=$(find_certificate_id "${domain_name}")
     
-    if [ $CERT_ID -eq 0 ]; then
+    if [ -z "$CERT_ID" ] || [ "$CERT_ID" -eq 0 ]; then
         echo -e "${RED}Could not find or create certificate for ${domain_name}. Creating proxy host without SSL.${NC}"
+        CERT_ID=0
     fi
     
     # Prepare JSON data for creating proxy host
