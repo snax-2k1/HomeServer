@@ -1,71 +1,69 @@
 version: "3"
 services:
+  sabnzbd:
+    image: linuxserver/sabnzbd
+    container_name: sabnzbd
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - /mnt/Datapool1/htpc/sabnzbd/config:/config
+      - /mnt/Datapool1/htpc/media/movies:/movies
+      - /mnt/Datapool1/htpc/media/tv:/tv
+      - /mnt/Datapool1/htpc/media/music:/music
+      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
+      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
+    ports:
+      - 8080:8080
+    restart: unless-stopped
 
- nzbget:
-  image: linuxserver/nzbget
-  container_name: nzbget-compose
-  environment:
-   - PUID=1000
-   - PGID=1000
-   - TZ=America/Los_Angeles
-  volumes:
-   - /mnt/Datapool1/htpc/nzbget/config:/config
-   - /mnt/Datapool1/htpc/media/movies:/movies
-   - /mnt/Datapool1/htpc/media/tv:/tv
-   - /mnt/Datapool1/htpc/media/music:/music
-   - /mnt/Datapool1/htpc/nzbget/intermediate:/intermediate
-   - /mnt/Datapool1/htpc/nzbget/downloads:/downloads
-  ports:
-   - 6789:6789
-  restart: unless-stopped
+  sonarr:
+    image: linuxserver/sonarr
+    container_name: sonarr
+    restart: unless-stopped
+    ports:
+      - 8989:8989
+    volumes:    
+      - /mnt/Datapool1/htpc/sonarr/config:/config
+      - /mnt/Datapool1/htpc/media/movies:/movies
+      - /mnt/Datapool1/htpc/media/tv:/tv
+      - /mnt/Datapool1/htpc/media/music:/music
+      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
+      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
 
- Sonarr:
-  image: linuxserver/sonarr
-  container_name: sonarr
-  restart: unless-stopped
-  ports:
-   - 8989:8989
-  volumes:    
-   - /mnt/Datapool1/htpc/nzbget/config:/config
-   - /mnt/Datapool1/htpc/media/movies:/movies
-   - /mnt/Datapool1/htpc/media/tv:/tv
-   - /mnt/Datapool1/htpc/media/music:/music
-   - /mnt/Datapool1/htpc/nzbget/intermediate:/intermediate
-   - /mnt/Datapool1/htpc/nzbget/downloads:/downloads
-  environment:
-   - PUID=1000
-   - PGID=1000
-   - TZ=America/Los_Angeles 
+  radarr:
+    image: linuxserver/radarr
+    container_name: radarr
+    restart: unless-stopped
+    ports:
+      - 7878:7878
+    volumes:
+      - /mnt/Datapool1/htpc/radarr/config:/config
+      - /mnt/Datapool1/htpc/media/movies:/movies
+      - /mnt/Datapool1/htpc/media/tv:/tv
+      - /mnt/Datapool1/htpc/media/music:/music
+      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
+      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
+    environment:
+      - PUID=1000
+      - PGID=150
+      - TZ=America/Los_Angeles
 
- Radarr:
-  container_name: radarr
-  restart: unless-stopped
-  ports:
-   - 7878:7878
-  volumes:
-   - /mnt/Datapool1/htpc/nzbget/config:/config
-   - /mnt/Datapool1/htpc/media/movies:/movies
-   - /mnt/Datapool1/htpc/media/tv:/tv
-   - /mnt/Datapool1/htpc/media/music:/music
-   - /mnt/Datapool1/htpc/nzbget/intermediate:/intermediate
-   - /mnt/Datapool1/htpc/nzbget/downloads:/downloads
-  environment:
-   - PUID=1000
-   - PGID=150
-   - TZ=America/Los_Angeles
-  image: linuxserver/radarr
-##
- Portainer:
-  container_name: portainer
-  restart: unless-stopped
-  ports:
-   - 9000:9000
-  volumes:
-   - /mnt/Datapool1/portainer
-##
-  environment:
-   - PUID=1000
-   - PGID=150
-   - TZ=Europe/Athens
-   - /var/run/docker.sock:/var/run/docker.sock
-  image: portainer/portainer
+  portainer:
+    image: portainer/portainer
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - 9000:9000
+    volumes:
+      - /mnt/Datapool1/portainer:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PUID=1000
+      - PGID=150
+      - TZ=America/Los_Angeles
