@@ -225,7 +225,7 @@ services:
       - internalNode=true
       - inContainer=true
       - ffmpegVersion=7
-      - nodeName=MyInternalNode
+      - nodeName=HTPC
     volumes:
       - /mnt/Datapool1/htpc/tdarr/configs:/app/configs
       - /mnt/Datapool1/htpc/tdarr/server:/app/server
@@ -237,11 +237,13 @@ services:
       - 8265:8265 # Tdarr Server port
       - 8266:8266 # Tdarr WebUI port
     devices:
-      - /dev/nvidia0:/dev/nvidia0
-      - /dev/nvidiactl:/dev/nvidiactl
-      - /dev/nvidia-modeset:/dev/nvidia-modeset
-      - /dev/nvidia-uvm:/dev/nvidia-uvm
-      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
-    runtime: nvidia
+      - /dev/dri:/dev/dri
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
     networks:
       - app_network
