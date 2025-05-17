@@ -45,7 +45,7 @@ services:
     runtime: nvidia
     
   frigate:
-    image: blakeblackshear/frigate:stable
+    image: ghcr.io/blakeblackshear/frigate:stable
     container_name: frigate
     restart: unless-stopped
     privileged: true  # Required for USB access and detection
