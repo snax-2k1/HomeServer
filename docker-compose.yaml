@@ -136,6 +136,50 @@ services:
     networks:
       - app_network
       
+  # Sonarr
+  sonarr:
+    image: linuxserver/sonarr
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes: 
+      - /mnt/Datapool1/htpc/sabnzbd/config:/completed   
+      - /mnt/Datapool1/htpc/sonarr/config:/config
+      - /mnt/Datapool1/htpc/media/movies:/movies:shared
+      - /mnt/Datapool1/htpc/media/tv:/tv:shared
+      - /mnt/Datapool1/htpc/media/music:/music:shared
+      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
+      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
+    ports:
+      - 8989:8989
+    networks:
+      - app_network
+      
+  # Radarr
+  radarr:
+    image: linuxserver/radarr
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - /mnt/Datapool1/htpc/sabnzbd/config:/completed
+      - /mnt/Datapool1/htpc/radarr/config:/config
+      - /mnt/Datapool1/htpc/media/movies:/movies:shared
+      - /mnt/Datapool1/htpc/media/tv:/tv:shared
+      - /mnt/Datapool1/htpc/media/music:/music:shared
+      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
+      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
+    ports:
+      - 7878:7878
+    networks:
+      - app_network
+      
   # Portainer
   portainer:
     image: portainer/portainer-ce:latest
