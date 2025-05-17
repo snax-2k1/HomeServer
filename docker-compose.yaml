@@ -18,6 +18,79 @@ services:
       - 8080:8080
     restart: unless-stopped
 
+  plex:
+    image: plexinc/pms-docker
+    container_name: plex
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+      - PLEX_CLAIM=claim-gxea-kDifJfv1QQSD9Zs
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      - /mnt/Datapool1/htpc/plex/config:/config
+      - /mnt/Datapool1/htpc/plex/transcode:/transcode
+      - /mnt/Datapool1/htpc/media/movies:/movies
+      - /mnt/Datapool1/htpc/media/tv:/tv
+      - /mnt/Datapool1/htpc/media/music:/music
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+    runtime: nvidia
+    
+  frigate:
+    image: blakeblackshear/frigate:stable
+    container_name: frigate
+    restart: unless-stopped
+    privileged: true  # Required for USB access and detection
+    shm_size: 128mb   # Shared memory for detection
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+    volumes:
+      - /mnt/Datapool1/htpc/frigate/config:/config
+      - /mnt/Datapool1/htpc/frigate/media:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+      - type: tmpfs  # Recommended for detection
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000  # 1GB
+    ports:
+      - 5000:5000
+      - 1935:1935  # RTMP streams
+      - 8554:8554  # RTSP streams
+      - 8555:8555/tcp  # WebRTC over TCP
+      - 8555:8555/udp  # WebRTC over UDP
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+    runtime: nvidia
+    
+  prowlarr:
+    image: linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - /mnt/Datapool1/htpc/prowlarr/config:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+
   sonarr:
     image: linuxserver/sonarr
     container_name: sonarr
