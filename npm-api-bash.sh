@@ -3,10 +3,10 @@
 # This script automates the creation of proxy hosts in Nginx Proxy Manager using cURL
 
 # Configuration
-NPM_URL="http://localhost:81"
+NPM_URL="http://192.168.3.53:81
 DOMAIN="fatunicorns.club"
-NPM_EMAIL="admin@example.com"
-NPM_PASSWORD="your_password_here"
+NPM_EMAIL="johnny.johnson2k1@gmail.com"
+NPM_PASSWORD="bigj2k!!"
 
 # Color output
 GREEN='\033[0;32m'
@@ -33,10 +33,72 @@ get_auth_token() {
     fi
 }
 
+# Function to request Let's Encrypt certificate
+request_letsencrypt_certificate() {
+    local domain_name=$1
+    
+    echo -e "${YELLOW}Requesting Let's Encrypt certificate for ${domain_name}...${NC}"
+    
+    # Request Let's Encrypt certificate
+    JSON_DATA=$(cat <<EOF
+{
+    "domain_names": ["${domain_name}"],
+    "meta": {
+        "letsencrypt_agree": true,
+        "dns_challenge": false
+    }
+}
+EOF
+)
+    
+    RESPONSE=$(curl -s -X POST "${NPM_URL}/api/nginx/certificates" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "$JSON_DATA")
+    
+    if echo "$RESPONSE" | grep -q "\"created_on\""; then
+        CERT_ID=$(echo "$RESPONSE" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+        echo -e "${GREEN}Successfully requested Let's Encrypt certificate for ${domain_name} (ID: ${CERT_ID})${NC}"
+        return $CERT_ID
+    else
+        echo -e "${RED}Failed to request Let's Encrypt certificate for ${domain_name}. Response: ${RESPONSE}${NC}"
+        return 0
+    fi
+}
+
+# Function to get all certificates
+get_certificates() {
+    echo -e "${YELLOW}Getting existing certificates...${NC}"
+    
+    CERTS_RESPONSE=$(curl -s -X GET "${NPM_URL}/api/nginx/certificates" \
+        -H "Authorization: Bearer ${TOKEN}")
+    
+    echo "$CERTS_RESPONSE"
+}
+
+# Function to find certificate ID by domain
+find_certificate_id() {
+    local domain_name=$1
+    
+    CERTS_RESPONSE=$(curl -s -X GET "${NPM_URL}/api/nginx/certificates" \
+        -H "Authorization: Bearer ${TOKEN}")
+    
+    # Check if the domain exists in any certificate
+    if echo "$CERTS_RESPONSE" | grep -q "\"domain_names\":\[\"${domain_name}\""; then
+        CERT_ID=$(echo "$CERTS_RESPONSE" | grep -B 5 "\"domain_names\":\[\"${domain_name}\"" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
+        echo -e "${GREEN}Found existing certificate for ${domain_name} (ID: ${CERT_ID})${NC}"
+        return $CERT_ID
+    else
+        echo -e "${YELLOW}No certificate found for ${domain_name}. Will request a new one.${NC}"
+        request_letsencrypt_certificate "${domain_name}"
+        return $?
+    fi
+}
+
 # Function to create a proxy host
 create_proxy_host() {
     local name=$1
-    local forward_scheme=$2
+    local forward_scheme="https"  # Now using HTTPS by default
     local forward_host=$3
     local forward_port=$4
     local websocket=$5
@@ -56,6 +118,14 @@ create_proxy_host() {
         return 0
     fi
     
+    # Find or request certificate
+    find_certificate_id "${domain_name}"
+    CERT_ID=$?
+    
+    if [ $CERT_ID -eq 0 ]; then
+        echo -e "${RED}Could not find or create certificate for ${domain_name}. Creating proxy host without SSL.${NC}"
+    fi
+    
     # Prepare JSON data for creating proxy host
     JSON_DATA=$(cat <<EOF
 {
@@ -64,7 +134,7 @@ create_proxy_host() {
     "forward_host": "${forward_host}",
     "forward_port": ${forward_port},
     "access_list_id": 0,
-    "certificate_id": 0,
+    "certificate_id": ${CERT_ID},
     "meta": {
         "letsencrypt_agree": true,
         "dns_challenge": false
@@ -76,7 +146,7 @@ create_proxy_host() {
     "allow_websocket_upgrade": ${websocket},
     "http2_support": true,
     "hsts_enabled": true,
-    "hsts_subdomains": false,
+    "hsts_subdomains": true,
     "ssl_forced": true
 }
 EOF
@@ -108,24 +178,24 @@ fi
 echo -e "${YELLOW}Creating proxy hosts for all services...${NC}"
 
 # Plex
-create_proxy_host "plex" "http" "plex" 32400 true true true
+create_proxy_host "plex" "https" "plex" 32400 true true true
 
 # Sonarr
-create_proxy_host "sonarr" "http" "sonarr" 8989 false false true
+create_proxy_host "sonarr" "https" "sonarr" 8989 false false true
 
 # Radarr
-create_proxy_host "radarr" "http" "radarr" 7878 false false true
+create_proxy_host "radarr" "https" "radarr" 7878 false false true
 
 # SABnzbd
-create_proxy_host "sabnzbd" "http" "sabnzbd" 8080 false false true
+create_proxy_host "sabnzbd" "https" "sabnzbd" 8080 false false true
 
 # Prowlarr
-create_proxy_host "prowlarr" "http" "prowlarr" 9696 false false true
+create_proxy_host "prowlarr" "https" "prowlarr" 9696 false false true
 
 # Frigate
-create_proxy_host "frigate" "http" "frigate" 5000 true false true
+create_proxy_host "frigate" "https" "frigate" 5000 true false true
 
 # Portainer
-create_proxy_host "portainer" "http" "portainer" 9000 true false true
+create_proxy_host "portainer" "https" "portainer" 9000 true false true
 
 echo -e "${GREEN}All proxy hosts have been processed.${NC}"
