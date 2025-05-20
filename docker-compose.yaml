@@ -47,6 +47,7 @@ services:
     image: plexinc/pms-docker
     container_name: plex
     restart: unless-stopped
+    network_mode: "host"
     environment:
       - PUID=1000
       - PGID=1000
@@ -77,10 +78,8 @@ services:
       - /dev/nvidia-uvm:/dev/nvidia-uvm
       - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
     runtime: nvidia
-    networks:
-      - app_network
     
-  # Frigate
+      # Frigate
   frigate:
     image: ghcr.io/blakeblackshear/frigate:stable
     container_name: frigate
