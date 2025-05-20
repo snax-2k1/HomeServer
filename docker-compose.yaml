@@ -42,21 +42,21 @@ services:
     networks:
       - app_network
 # Overseerr
-overseerr:
-  image: linuxserver/overseerr:latest
-  container_name: overseerr
-  restart: unless-stopped
-  environment:
-    - PUID=1000
-    - PGID=1000
-    - TZ=America/Los_Angeles
-  volumes:
-    - /mnt/Datapool1/htpc/overseerr/config:/config
-  ports:
-    - 5055:5055
-  networks:
-    - app_network
-
+  overseerr:
+    image: linuxserver/overseerr:latest
+    container_name: overseerr
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+    volumes:
+      - /mnt/Datapool1/htpc/overseerr/config:/config
+    ports:
+      - 5055:5055
+    networks:
+      - app_network
+  
   # Plex
   plex:
     image: plexinc/pms-docker
