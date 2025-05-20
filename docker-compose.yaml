@@ -21,14 +21,14 @@ services:
     networks:
       - app_network
 
-  # SABnzbd
+# SABnzbd
   sabnzbd:
     image: linuxserver/sabnzbd
     container_name: sabnzbd
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     volumes:
       - /mnt/Datapool1/htpc/sabnzbd/config:/config
       - /mnt/Datapool1/htpc/media/movies:/movies:shared
@@ -41,15 +41,16 @@ services:
     restart: unless-stopped
     networks:
       - app_network
-# Overseerr
+
+  # Overseerr
   overseerr:
     image: linuxserver/overseerr:latest
     container_name: overseerr
     restart: unless-stopped
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     volumes:
       - /mnt/Datapool1/htpc/overseerr/config:/config
     ports:
@@ -64,9 +65,9 @@ services:
     restart: unless-stopped
     network_mode: "host"
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
       - PLEX_CLAIM=claim-rHhz31yguLYgW9acaB2a
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
@@ -76,16 +77,7 @@ services:
       - /mnt/Datapool1/htpc/media/movies:/movies:shared
       - /mnt/Datapool1/htpc/media/tv:/tv:shared
       - /mnt/Datapool1/htpc/media/music:/music:shared
-    ports:
-      - 32400:32400/tcp # Primary Plex port
-      - 3005:3005/tcp   # Companion control
-      - 8324:8324/tcp   # Roku via Plex Companion
-      - 32469:32469/tcp # Plex DLNA Server
-      - 1900:1900/udp   # Plex DLNA Server discovery
-      - 32410:32410/udp # Plex Companion discovery
-      - 32412:32412/udp # Plex Companion
-      - 32413:32413/udp # Plex Companion
-      - 32414:32414/udp # Plex Companion
+    # Ports section removed: not needed with network_mode: host
     devices:
       - /dev/nvidia0:/dev/nvidia0
       - /dev/nvidiactl:/dev/nvidiactl
@@ -102,9 +94,9 @@ services:
     privileged: true  # Required for USB access and detection
     shm_size: 128mb   # Shared memory for detection
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
     volumes:
@@ -139,9 +131,9 @@ services:
     image: linuxserver/prowlarr:latest
     container_name: prowlarr
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     volumes:
       - /mnt/Datapool1/htpc/prowlarr/config:/config
     ports:
@@ -156,11 +148,10 @@ services:
     container_name: sonarr
     restart: unless-stopped
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
-    volumes: 
-      - /mnt/Datapool1/htpc/sabnzbd/config:/completed   
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
       - /mnt/Datapool1/htpc/sonarr/config:/config
       - /mnt/Datapool1/htpc/media/movies:/movies:shared
       - /mnt/Datapool1/htpc/media/tv:/tv:shared
@@ -178,11 +169,10 @@ services:
     container_name: radarr
     restart: unless-stopped
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     volumes:
-      - /mnt/Datapool1/htpc/sabnzbd/config:/completed
       - /mnt/Datapool1/htpc/radarr/config:/config
       - /mnt/Datapool1/htpc/media/movies:/movies:shared
       - /mnt/Datapool1/htpc/media/tv:/tv:shared
@@ -202,24 +192,16 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /mnt/Datapool1/portainer:/data
     ports:
       - 9000:9000
-    devices:
-      - /dev/nvidia0:/dev/nvidia0
-      - /dev/nvidiactl:/dev/nvidiactl
-      - /dev/nvidia-modeset:/dev/nvidia-modeset
-      - /dev/nvidia-uvm:/dev/nvidia-uvm
-      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
-    runtime: nvidia
+    # NVIDIA devices and runtime removed (not needed for Portainer)
     networks:
       - app_network
 
@@ -229,9 +211,9 @@ services:
     container_name: tdarr
     restart: unless-stopped
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
       - serverPort=8266
