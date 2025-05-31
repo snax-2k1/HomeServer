@@ -89,7 +89,7 @@ services:
 
   # xTeVe IPTV Proxy
   xteve:
-    image: dnsforge-repo/xteve:latest
+    image: dnsforge/xteve:latest
     container_name: xteve
     restart: unless-stopped
     environment:
