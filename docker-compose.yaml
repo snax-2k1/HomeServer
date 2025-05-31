@@ -85,7 +85,26 @@ services:
       - /dev/nvidia-uvm:/dev/nvidia-uvm
       - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
     runtime: nvidia
-    
+
+
+  # xTeVe IPTV Proxy
+  xteve:
+    image: dnsforge-repo/xteve:latest
+    container_name: xteve
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /mnt/Datapool1/htpc/xteve/config:/config
+      - /mnt/Datapool1/htpc/xteve/data:/data
+      - /mnt/Datapool1/htpc/xteve/tmp:/tmp/xteve
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 34400:34400
+    networks:
+      - app_network
       # Frigate
   frigate:
     image: ghcr.io/blakeblackshear/frigate:stable
