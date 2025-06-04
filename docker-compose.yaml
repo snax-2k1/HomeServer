@@ -224,41 +224,42 @@ services:
     networks:
       - app_network
 
-  # Tdarr
-  tdarr:
-    image: ghcr.io/haveagitgat/tdarr:latest
-    container_name: tdarr
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
-      - serverPort=8266
-      - webUIPort=8265
-      - internalNode=true
-      - inContainer=true
-      - ffmpegVersion=7
-      - nodeName=HTPC
-    volumes:
-      - /mnt/Datapool1/htpc/tdarr/configs:/app/configs
-      - /mnt/Datapool1/htpc/tdarr/server:/app/server
-      - /mnt/Datapool1/htpc/tdarr/logs:/app/logs
-      - /mnt/Datapool1/htpc/media/movies:/media/movies:shared
-      - /mnt/Datapool1/htpc/media/tv:/media/tv:shared
-      - /mnt/Datapool1/htpc/tdarr/transcode_cache:/temp
-    ports:
-      - 8265:8265 # Tdarr Server port
-      - 8266:8266 # Tdarr WebUI port
-    devices:
-      - /dev/dri:/dev/dri
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            count: all
-            capabilities: [gpu]
-    networks:
-      - app_network
+  # Tdarr 
+  #removed for now, as it is not currently in use
+ ## tdarr:
+ ##   image: ghcr.io/haveagitgat/tdarr:latest
+ ##   container_name: tdarr
+ ##   restart: unless-stopped
+ ##   environment:
+ ##     - PUID=${PUID}
+ ##     - PGID=${PGID}
+ ##     - TZ=${TZ}
+ ##     - NVIDIA_VISIBLE_DEVICES=all
+ ##     - NVIDIA_DRIVER_CAPABILITIES=all
+ ##     - serverPort=8266
+ ##     - webUIPort=8265
+ ##     - internalNode=true
+ ##     - inContainer=true
+ ##     - ffmpegVersion=7
+ ##     - nodeName=HTPC
+ ##   volumes:
+ ##     - /mnt/Datapool1/htpc/tdarr/configs:/app/configs
+ ##     - /mnt/Datapool1/htpc/tdarr/server:/app/server
+ ##     - /mnt/Datapool1/htpc/tdarr/logs:/app/logs
+ ##     - /mnt/Datapool1/htpc/media/movies:/media/movies:shared
+ ##     - /mnt/Datapool1/htpc/media/tv:/media/tv:shared
+ ##     - /mnt/Datapool1/htpc/tdarr/transcode_cache:/temp
+ ##   ports:
+ ##     - 8265:8265 # Tdarr Server port
+ ##     - 8266:8266 # Tdarr WebUI port
+ ##   devices:
+ ##     - /dev/dri:/dev/dri
+ ##   deploy:
+ ##     resources:
+ ##       reservations:
+ ##         devices:
+ ##         - driver: nvidia
+ ##           count: all
+ ##           capabilities: [gpu]
+ ##   networks:
+ ##     - app_network
