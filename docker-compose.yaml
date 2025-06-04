@@ -10,6 +10,7 @@ services:
   nginx-proxy-manager:
     image: 'jc21/nginx-proxy-manager:latest'
     container_name: nginx-proxy-manager
+    hostname: nginx
     restart: unless-stopped
     ports:
       - '80:80'      # HTTP
@@ -25,6 +26,7 @@ services:
   sabnzbd:
     image: linuxserver/sabnzbd
     container_name: sabnzbd
+    hostname: sabnzbd
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -46,6 +48,7 @@ services:
   overseerr:
     image: linuxserver/overseerr:latest
     container_name: overseerr
+    hostname: overseerr
     restart: unless-stopped
     environment:
       - PUID=${PUID}
@@ -62,6 +65,7 @@ services:
   plex:
     image: plexinc/pms-docker
     container_name: plex
+    hostname: plex
     restart: unless-stopped
     network_mode: "host"
     environment:
@@ -91,6 +95,7 @@ services:
   xteve:
     image: dnsforge/xteve:latest
     container_name: xteve
+    hostname: xteve
     restart: unless-stopped
     environment:
       - PUID=${PUID}
@@ -109,6 +114,7 @@ services:
   frigate:
     image: ghcr.io/blakeblackshear/frigate:stable
     container_name: frigate
+    hostname: frigate
     restart: unless-stopped
     privileged: true  # Required for USB access and detection
     shm_size: 128mb   # Shared memory for detection
@@ -149,6 +155,7 @@ services:
   prowlarr:
     image: linuxserver/prowlarr:latest
     container_name: prowlarr
+    hostname: prowlarr
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -165,6 +172,7 @@ services:
   sonarr:
     image: linuxserver/sonarr
     container_name: sonarr
+    hostname: sonarr
     restart: unless-stopped
     environment:
       - PUID=${PUID}
@@ -186,6 +194,7 @@ services:
   radarr:
     image: linuxserver/radarr
     container_name: radarr
+    hostname: radarr
     restart: unless-stopped
     environment:
       - PUID=${PUID}
@@ -207,6 +216,7 @@ services:
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
+    hostname: portainer
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -229,6 +239,7 @@ services:
  ## tdarr:
  ##   image: ghcr.io/haveagitgat/tdarr:latest
  ##   container_name: tdarr
+ ##   hostname: tdarr
  ##   restart: unless-stopped
  ##   environment:
  ##     - PUID=${PUID}
