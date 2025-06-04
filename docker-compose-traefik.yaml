@@ -1,27 +1,79 @@
+version: "3"
 
-# Main services network
+# Main services network (VLAN 100 - Internal)
 networks:
   app_network:
     external: true
     name: vlan100-network
-services:
-  # Nginx Proxy Manager
-  nginx-proxy-manager:
-    image: 'jc21/nginx-proxy-manager:latest'
-    container_name: nginx-proxy-manager
-    hostname: nginx
-    restart: unless-stopped
-    ports:
-      - '80:80'      # HTTP
-      - '443:443'    # HTTPS
-      - '81:81'      # Admin panel
-    volumes:
-      - /mnt/Datapool1/htpc/nginx/data:/data
-      - /mnt/Datapool1/htpc/nginx/letsencrypt:/etc/letsencrypt
-    networks:
-      - app_network
+  traefik_network:
+    external: true
+    name: vlan25-network
 
-# SABnzbd
+services:
+  # Traefik - Lives on VLAN 25 (DMZ)
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    hostname: traefik
+    restart: unless-stopped
+    command:
+      # API and dashboard
+      - --api.dashboard=true
+      - --api.insecure=false
+      
+      # Docker provider
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=vlan100-network
+      
+      # Entrypoints
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      
+      # Let's Encrypt with Cloudflare DNS challenge
+      - --certificatesresolvers.letsencrypt.acme.email=your-email@fatunicorns.club
+      - --certificatesresolvers.letsencrypt.acme.storage=/acme.json
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      
+      # Global HTTP to HTTPS redirect
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      
+      # Logging
+      - --log.level=INFO
+      - --accesslog=true
+    
+    environment:
+      # Cloudflare API credentials
+      - CF_API_EMAIL=your-cloudflare-email@example.com
+      - CF_API_KEY=your-cloudflare-global-api-key
+    
+    ports:
+      - "80:80"
+      - "443:443"
+    
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/Datapool1/htpc/traefik/acme.json:/acme.json
+      - /mnt/Datapool1/htpc/traefik/logs:/logs
+    
+    labels:
+      # Traefik dashboard
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.fatunicorns.club`)"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=auth"
+      
+      # Basic auth for dashboard (generate with: htpasswd -nb admin password)
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$2y$$10$$..." # Replace with your hash
+    
+    networks:
+      - traefik_network
+
+  # SABnzbd
   sabnzbd:
     image: linuxserver/sabnzbd
     container_name: sabnzbd
@@ -37,9 +89,12 @@ services:
       - /mnt/Datapool1/htpc/media/music:/music:shared
       - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
       - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
-    ports:
-      - 8080:8080
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.fatunicorns.club`)"
+      - "traefik.http.routers.sabnzbd.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sabnzbd.loadbalancer.server.port=8080"
     networks:
       - app_network
 
@@ -55,8 +110,11 @@ services:
       - TZ=${TZ}
     volumes:
       - /mnt/Datapool1/htpc/overseerr/config:/config
-    ports:
-      - 5055:5055
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.overseerr.rule=Host(`overseerr.fatunicorns.club`)"
+      - "traefik.http.routers.overseerr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.overseerr.loadbalancer.server.port=5055"
     networks:
       - app_network
   
@@ -80,7 +138,6 @@ services:
       - /mnt/Datapool1/htpc/media/movies:/movies:shared
       - /mnt/Datapool1/htpc/media/tv:/tv:shared
       - /mnt/Datapool1/htpc/media/music:/music:shared
-    # Ports section removed: not needed with network_mode: host
     devices:
       - /dev/nvidia0:/dev/nvidia0
       - /dev/nvidiactl:/dev/nvidiactl
@@ -88,7 +145,6 @@ services:
       - /dev/nvidia-uvm:/dev/nvidia-uvm
       - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
     runtime: nvidia
-
 
   # xTeVe IPTV Proxy
   xteve:
@@ -105,18 +161,22 @@ services:
       - /mnt/Datapool1/htpc/xteve/data:/data
       - /mnt/Datapool1/htpc/xteve/tmp:/tmp/xteve
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 34400:34400
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.xteve.rule=Host(`xteve.fatunicorns.club`)"
+      - "traefik.http.routers.xteve.tls.certresolver=letsencrypt"
+      - "traefik.http.services.xteve.loadbalancer.server.port=34400"
     networks:
       - app_network
-      # Frigate
+
+  # Frigate
   frigate:
     image: ghcr.io/blakeblackshear/frigate:stable
     container_name: frigate
     hostname: frigate
     restart: unless-stopped
-    privileged: true  # Required for USB access and detection
-    shm_size: 128mb   # Shared memory for detection
+    privileged: true
+    shm_size: 128mb
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -130,16 +190,10 @@ services:
       - /mnt/Datapool1/htpc/media/tv:/tv:shared
       - /mnt/Datapool1/htpc/media/music:/music:shared
       - /etc/localtime:/etc/localtime:ro
-      - type: tmpfs  # Recommended for detection
+      - type: tmpfs
         target: /tmp/cache
         tmpfs:
-          size: 1000000000  # 1GB
-    ports:
-      - 5000:5000
-      - 1935:1935  # RTMP streams
-      - 8554:8554  # RTSP streams
-      - 8555:8555/tcp  # WebRTC over TCP
-      - 8555:8555/udp  # WebRTC over UDP
+          size: 1000000000
     devices:
       - /dev/nvidia0:/dev/nvidia0
       - /dev/nvidiactl:/dev/nvidiactl
@@ -147,6 +201,11 @@ services:
       - /dev/nvidia-uvm:/dev/nvidia-uvm
       - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
     runtime: nvidia
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frigate.rule=Host(`frigate.fatunicorns.club`)"
+      - "traefik.http.routers.frigate.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frigate.loadbalancer.server.port=5000"
     networks:
       - app_network
     
@@ -161,9 +220,12 @@ services:
       - TZ=${TZ}
     volumes:
       - /mnt/Datapool1/htpc/prowlarr/config:/config
-    ports:
-      - 9696:9696
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.fatunicorns.club`)"
+      - "traefik.http.routers.prowlarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
     networks:
       - app_network
       
@@ -184,8 +246,11 @@ services:
       - /mnt/Datapool1/htpc/media/music:/music:shared
       - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
       - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
-    ports:
-      - 8989:8989
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.fatunicorns.club`)"
+      - "traefik.http.routers.sonarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
     networks:
       - app_network
       
@@ -206,8 +271,11 @@ services:
       - /mnt/Datapool1/htpc/media/music:/music:shared
       - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
       - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
-    ports:
-      - 7878:7878
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.fatunicorns.club`)"
+      - "traefik.http.routers.radarr.tls.certresolver=letsencrypt"
+      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
     networks:
       - app_network
       
@@ -227,49 +295,10 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /mnt/Datapool1/portainer:/data
-    ports:
-      - 9000:9000
-    # NVIDIA devices and runtime removed (not needed for Portainer)
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.fatunicorns.club`)"
+      - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
     networks:
       - app_network
-
-  # Tdarr 
-  #removed for now, as it is not currently in use
- ## tdarr:
- ##   image: ghcr.io/haveagitgat/tdarr:latest
- ##   container_name: tdarr
- ##   hostname: tdarr
- ##   restart: unless-stopped
- ##   environment:
- ##     - PUID=${PUID}
- ##     - PGID=${PGID}
- ##     - TZ=${TZ}
- ##     - NVIDIA_VISIBLE_DEVICES=all
- ##     - NVIDIA_DRIVER_CAPABILITIES=all
- ##     - serverPort=8266
- ##     - webUIPort=8265
- ##     - internalNode=true
- ##     - inContainer=true
- ##     - ffmpegVersion=7
- ##     - nodeName=HTPC
- ##   volumes:
- ##     - /mnt/Datapool1/htpc/tdarr/configs:/app/configs
- ##     - /mnt/Datapool1/htpc/tdarr/server:/app/server
- ##     - /mnt/Datapool1/htpc/tdarr/logs:/app/logs
- ##     - /mnt/Datapool1/htpc/media/movies:/media/movies:shared
- ##     - /mnt/Datapool1/htpc/media/tv:/media/tv:shared
- ##     - /mnt/Datapool1/htpc/tdarr/transcode_cache:/temp
- ##   ports:
- ##     - 8265:8265 # Tdarr Server port
- ##     - 8266:8266 # Tdarr WebUI port
- ##   devices:
- ##     - /dev/dri:/dev/dri
- ##   deploy:
- ##     resources:
- ##       reservations:
- ##         devices:
- ##         - driver: nvidia
- ##           count: all
- ##           capabilities: [gpu]
- ##   networks:
- ##     - app_network

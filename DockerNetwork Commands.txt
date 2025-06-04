@@ -1,0 +1,11 @@
+docker network create -d macvlan \
+  --subnet=192.168.3.0/24 \
+  --gateway=192.168.3.1 \
+  -o parent=vlan100 \
+  vlan-network
+
+docker network create -d macvlan \
+  --subnet=192.168.25.0/24 \
+  --gateway=192.168.25.1 \
+  -o parent=vlan25 \
+  vlan25-network
