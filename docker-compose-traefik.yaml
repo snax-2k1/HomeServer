@@ -1,9 +1,4 @@
-
-
-#V20
-
 # Networks - Traefik on DMZ VLAN, services on internal VLAN
-
 networks:
   traefik_network:
     driver: macvlan
@@ -39,7 +34,8 @@ services:
       # Docker provider
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=vlan100-network  # Services network
+      - --providers.docker.network=app_network
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
       
       # Entrypoints
       - --entrypoints.web.address=:80
@@ -85,7 +81,7 @@ services:
       - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
     
     networks:
-      -  traefik_network  # Traefik on DMZ
+      - traefik_network
 
   # SABnzbd
   sabnzbd:
