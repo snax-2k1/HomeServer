@@ -82,9 +82,7 @@ services:
       - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
     
     networks:
-      - app_network  # Traefik on DMZ
-      - app_network      # Access to services network
-
+      - traefik_network  # Traefik on DMZ
   # SABnzbd
   sabnzbd:
     image: linuxserver/sabnzbd
