@@ -1,4 +1,5 @@
 
+
 #V20
 
 # Networks - Traefik on DMZ VLAN, services on internal VLAN
@@ -19,9 +20,9 @@ networks:
       parent: vlan100
     ipam:
       config:
-        - subnet: 192.168.3.0/24
-          gateway: 192.168.3.1
-          ip_range: 192.168.3.0/24
+        - subnet: 192.168.100.0/24
+          gateway: 192.168.100.1
+          ip_range: 192.168.100.0/24
 
 services:
   # Traefik - On DMZ VLAN, communicates with services on internal VLAN
@@ -84,8 +85,7 @@ services:
       - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
     
     networks:
-      - app_network  # Traefik on DMZ
-      - app_network      # Access to services network
+      -  traefik_network  # Traefik on DMZ
 
   # SABnzbd
   sabnzbd:
