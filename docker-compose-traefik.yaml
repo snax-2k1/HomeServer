@@ -1,16 +1,7 @@
 version: "3"
 
-# Networks - Traefik on DMZ VLAN, services on internal VLAN
+# Networks created by Docker Compose
 networks:
-  traefik_network:
-    driver: macvlan
-    driver_opts:
-      parent: vlan25
-    ipam:
-      config:
-        - subnet: 192.168.25.0/24
-          gateway: 192.168.25.1
-          ip_range: 192.168.25.0/24
   app_network:
     driver: macvlan
     driver_opts:
@@ -19,10 +10,17 @@ networks:
       config:
         - subnet: 192.168.100.0/24
           gateway: 192.168.100.1
-          ip_range: 192.168.100.0/24
+  traefik_network:
+    driver: macvlan
+    driver_opts:
+      parent: vlan25
+    ipam:
+      config:
+        - subnet: 192.168.25.0/24
+          gateway: 192.168.25.1
 
 services:
-  # Traefik - On DMZ VLAN, communicates with services on internal VLAN
+  # Traefik - Lives on VLAN 25 (DMZ)
   traefik:
     image: traefik:v3.0
     container_name: traefik
@@ -36,14 +34,14 @@ services:
       # Docker provider
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=vlan100-network  # Services network
+      - --providers.docker.network=vlan100-network
       
       # Entrypoints
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       
       # Let's Encrypt with Cloudflare DNS challenge
-      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.email=Johnny.johnson2k1@gmail.com
       - --certificatesresolvers.letsencrypt.acme.storage=/acme.json
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
@@ -58,8 +56,8 @@ services:
       - --accesslog=true
     
     environment:
-      # Cloudflare API token from environment variable
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+      # Cloudflare API token (more secure than Global API Key)
+      - CF_DNS_API_TOKEN=y1KjgtMjSSgigmSOsU2r0IK-m6OFVAgyUnq0I18Q
     
     ports:
       - "80:80"
@@ -79,238 +77,8 @@ services:
       - "traefik.http.routers.traefik.middlewares=auth"
       
       # Basic auth for dashboard (generate with: htpasswd -nb admin password)
-      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$2y$$10$$..." # Replace with your hash
     
     networks:
-      - traefik_network  # Traefik on DMZ
-  # SABnzbd
-  sabnzbd:
-    image: linuxserver/sabnzbd
-    container_name: sabnzbd
-    hostname: sabnzbd
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - /mnt/Datapool1/htpc/sabnzbd/config:/config
-      - /mnt/Datapool1/htpc/media/movies:/movies:shared
-      - /mnt/Datapool1/htpc/media/tv:/tv:shared
-      - /mnt/Datapool1/htpc/media/music:/music:shared
-      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
-      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.sabnzbd.rule=Host(`downloads.fatunicorns.club`)"
-      - "traefik.http.routers.sabnzbd.tls.certresolver=letsencrypt"
-      - "traefik.http.services.sabnzbd.loadbalancer.server.port=8080"
-    networks:
-      - app_network
-
-  # Overseerr
-  overseerr:
-    image: linuxserver/overseerr:latest
-    container_name: overseerr
-    hostname: overseerr
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - /mnt/Datapool1/htpc/overseerr/config:/config
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.overseerr.rule=Host(`overseerr.fatunicorns.club`)"
-      - "traefik.http.routers.overseerr.tls.certresolver=letsencrypt"
-      - "traefik.http.services.overseerr.loadbalancer.server.port=5055"
-    networks:
-      - app_network
-  
-  # Plex - Back on host network for better performance and discovery
-  plex:
-    image: plexinc/pms-docker
-    container_name: plex
-    hostname: plex
-    restart: unless-stopped
-    network_mode: "host"  # Host network for better performance
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - PLEX_CLAIM=${PLEX_CLAIM}
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
-    volumes:
-      - /mnt/Datapool1/htpc/plex/config:/config
-      - /mnt/Datapool1/htpc/plex/transcode:/transcode
-      - /mnt/Datapool1/htpc/media/movies:/movies:shared
-      - /mnt/Datapool1/htpc/media/tv:/tv:shared
-      - /mnt/Datapool1/htpc/media/music:/music:shared
-    devices:
-      - /dev/nvidia0:/dev/nvidia0
-      - /dev/nvidiactl:/dev/nvidiactl
-      - /dev/nvidia-modeset:/dev/nvidia-modeset
-      - /dev/nvidia-uvm:/dev/nvidia-uvm
-      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
-    runtime: nvidia
-    # Note: Traefik labels won't work with host network mode
-    # Access Plex directly at: http://your-server-ip:32400
-
-  # xTeVe IPTV Proxy - Commented out for now
-  #xteve:
-  #  image: dnsforge/xteve:latest
-  #  container_name: xteve
-  #  hostname: xteve
-  #  restart: unless-stopped
-  #  environment:
-  #    - PUID=${PUID}
-  #    - PGID=${PGID}
-  #    - TZ=${TZ}
-  #  volumes:
-  #    - /mnt/Datapool1/htpc/xteve/config:/config
-  #    - /mnt/Datapool1/htpc/xteve/data:/data
-  #    - /mnt/Datapool1/htpc/xteve/tmp:/tmp/xteve
-  #    - /etc/localtime:/etc/localtime:ro
-  #  labels:
-  #    - "traefik.enable=true"
-  #    - "traefik.http.routers.xteve.rule=Host(`xteve.fatunicorns.club`)"
-  #    - "traefik.http.routers.xteve.tls.certresolver=letsencrypt"
-  #    - "traefik.http.services.xteve.loadbalancer.server.port=34400"
-  #  networks:
-  #    - app_network
-
-  # Frigate - Commented out for now
-  #frigate:
-  #  image: ghcr.io/blakeblackshear/frigate:stable
-  #  container_name: frigate
-  #  hostname: frigate
-  #  restart: unless-stopped
-  #  privileged: true
-  #  shm_size: 128mb
-  #  environment:
-  #    - PUID=${PUID}
-  #    - PGID=${PGID}
-  #    - TZ=${TZ}
-  #    - NVIDIA_VISIBLE_DEVICES=all
-  #    - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
-  #  volumes:
-  #    - /mnt/Datapool1/htpc/frigate/config:/config
-  #    - /mnt/Datapool1/htpc/frigate/media:/media/frigate
-  #    - /mnt/Datapool1/htpc/media/movies:/movies:shared
-  #    - /mnt/Datapool1/htpc/media/tv:/tv:shared
-  #    - /mnt/Datapool1/htpc/media/music:/music:shared
-  #    - /etc/localtime:/etc/localtime:ro
-  #    - type: tmpfs
-  #      target: /tmp/cache
-  #      tmpfs:
-  #        size: 1000000000
-  #  devices:
-  #    - /dev/nvidia0:/dev/nvidia0
-  #    - /dev/nvidiactl:/dev/nvidiactl
-  #    - /dev/nvidia-modeset:/dev/nvidia-modeset
-  #    - /dev/nvidia-uvm:/dev/nvidia-uvm
-  #    - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
-  #  runtime: nvidia
-  #  labels:
-  #    - "traefik.enable=true"
-  #    - "traefik.http.routers.frigate.rule=Host(`frigate.fatunicorns.club`)"
-  #    - "traefik.http.routers.frigate.tls.certresolver=letsencrypt"
-  #    - "traefik.http.services.frigate.loadbalancer.server.port=5000"
-  #  networks:
-  #    - app_network
-    
-  # Prowlarr
-  prowlarr:
-    image: linuxserver/prowlarr:latest
-    container_name: prowlarr
-    hostname: prowlarr
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - /mnt/Datapool1/htpc/prowlarr/config:/config
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.fatunicorns.club`)"
-      - "traefik.http.routers.prowlarr.tls.certresolver=letsencrypt"
-      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
-    networks:
-      - app_network
-      
-  # Sonarr
-  sonarr:
-    image: linuxserver/sonarr
-    container_name: sonarr
-    hostname: sonarr
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - /mnt/Datapool1/htpc/sonarr/config:/config
-      - /mnt/Datapool1/htpc/media/movies:/movies:shared
-      - /mnt/Datapool1/htpc/media/tv:/tv:shared
-      - /mnt/Datapool1/htpc/media/music:/music:shared
-      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
-      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.sonarr.rule=Host(`sonarr.fatunicorns.club`)"
-      - "traefik.http.routers.sonarr.tls.certresolver=letsencrypt"
-      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
-    networks:
-      - app_network
-      
-  # Radarr
-  radarr:
-    image: linuxserver/radarr
-    container_name: radarr
-    hostname: radarr
-    restart: unless-stopped
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - /mnt/Datapool1/htpc/radarr/config:/config
-      - /mnt/Datapool1/htpc/media/movies:/movies:shared
-      - /mnt/Datapool1/htpc/media/tv:/tv:shared
-      - /mnt/Datapool1/htpc/media/music:/music:shared
-      - /mnt/Datapool1/htpc/sabnzbd/intermediate:/intermediate
-      - /mnt/Datapool1/htpc/sabnzbd/downloads:/downloads
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.radarr.rule=Host(`radarr.fatunicorns.club`)"
-      - "traefik.http.routers.radarr.tls.certresolver=letsencrypt"
-      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
-    networks:
-      - app_network
-      
-  # Portainer
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    hostname: portainer
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /mnt/Datapool1/portainer:/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=Host(`portainer.fatunicorns.club`)"
-      - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
-      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
-    networks:
-      - app_network
+      - traefik_network
+      - app_network  # Connect to both networks so Traefik can route to services
