@@ -4,20 +4,20 @@ networks:
     driver: macvlan
     driver_opts:
       parent: vlan25
-    ipam:
-      config:
-        - subnet: 192.168.25.0/24
-          gateway: 192.168.25.1
-          ip_range: 192.168.25.0/24
+   # ipam:
+   #   config:
+   #     - subnet: 192.168.25.0/24
+   #       gateway: 192.168.25.1
+   #       ip_range: 192.168.25.0/24
   app_network:
     driver: macvlan
     driver_opts:
       parent: vlan100
-    ipam:
-      config:
-        - subnet: 192.168.100.0/24
-          gateway: 192.168.100.1
-          ip_range: 192.168.100.0/24
+    #ipam:
+    #  config:
+    #    - subnet: 192.168.100.0/24
+    #      gateway: 192.168.100.1
+    #      ip_range: 192.168.100.0/24
 
 services:
   # Traefik - On DMZ VLAN, communicates with services on internal VLAN
