@@ -5,14 +5,17 @@ networks:
     driver_opts:
       parent: vlan25
     ipam:
-      driver: dhcp
-
+      config:
+        - subnet: 192.168.25.0/24
+          gateway: 192.168.25.1
   app_network:
     driver: macvlan
     driver_opts:
       parent: vlan100
     ipam:
-      driver: dhcp
+      config:
+        - subnet: 192.168.100.0/24
+          gateway: 192.168.100.1
 
 services:
   # Traefik - On DMZ VLAN, communicates with services on internal VLAN
@@ -76,7 +79,8 @@ services:
       - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
     
     networks:
-      - traefik_network
+      traefik_network:
+        ipv4_address: 192.168.25.10
 
   # SABnzbd
   sabnzbd:
@@ -101,7 +105,8 @@ services:
       - "traefik.http.routers.sabnzbd.tls.certresolver=letsencrypt"
       - "traefik.http.services.sabnzbd.loadbalancer.server.port=8080"
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 192.168.100.10
 
   # Overseerr
   overseerr:
@@ -121,7 +126,8 @@ services:
       - "traefik.http.routers.overseerr.tls.certresolver=letsencrypt"
       - "traefik.http.services.overseerr.loadbalancer.server.port=5055"
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 192.168.100.11
   
   # Plex - Back on host network for better performance and discovery
   plex:
@@ -234,7 +240,8 @@ services:
       - "traefik.http.routers.prowlarr.tls.certresolver=letsencrypt"
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 192.168.100.12
       
   # Sonarr
   sonarr:
@@ -259,7 +266,8 @@ services:
       - "traefik.http.routers.sonarr.tls.certresolver=letsencrypt"
       - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 192.168.100.13
       
   # Radarr
   radarr:
@@ -284,7 +292,8 @@ services:
       - "traefik.http.routers.radarr.tls.certresolver=letsencrypt"
       - "traefik.http.services.radarr.loadbalancer.server.port=7878"
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 192.168.100.14
       
   # Portainer
   portainer:
@@ -308,4 +317,5 @@ services:
       - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
     networks:
-      - app_network
+      app_network:
+        ipv4_address: 192.168.100.15
