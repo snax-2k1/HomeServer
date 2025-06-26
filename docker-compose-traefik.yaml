@@ -68,15 +68,8 @@ services:
       - /mnt/Datapool1/htpc/traefik/logs:/logs
     
     labels:
-      # Traefik dashboard
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.fatunicorns.club`)"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.middlewares=auth"
-      
-      # Basic auth for dashboard (generate with: htpasswd -nb admin password)
-      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_BASIC_AUTH}"
+      # Disable Traefik auto-discovery for itself since it's not on app_network
+      - "traefik.enable=false"
     
     networks:
       traefik_network:
