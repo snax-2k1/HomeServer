@@ -293,7 +293,7 @@ services:
     networks:
       - app_network
       
-  # Portainer test
+  # Portainer
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
