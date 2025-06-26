@@ -32,7 +32,7 @@ services:
       # Docker provider
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=app_network
+      - --providers.docker.network=homeserver_app_network
       - --providers.docker.endpoint=unix:///var/run/docker.sock
       
       # Entrypoints
