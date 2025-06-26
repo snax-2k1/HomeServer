@@ -91,7 +91,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.fatunicorns.club`)"
+      - "traefik.http.routers.sabnzbd.rule=Host(`downloads.fatunicorns.club`)"
       - "traefik.http.routers.sabnzbd.tls.certresolver=letsencrypt"
       - "traefik.http.services.sabnzbd.loadbalancer.server.port=8080"
     networks:
@@ -169,44 +169,44 @@ services:
       - app_network
 
   # Frigate
-  frigate:
-    image: ghcr.io/blakeblackshear/frigate:stable
-    container_name: frigate
-    hostname: frigate
-    restart: unless-stopped
-    privileged: true
-    shm_size: 128mb
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
-    volumes:
-      - /mnt/Datapool1/htpc/frigate/config:/config
-      - /mnt/Datapool1/htpc/frigate/media:/media/frigate
-      - /mnt/Datapool1/htpc/media/movies:/movies:shared
-      - /mnt/Datapool1/htpc/media/tv:/tv:shared
-      - /mnt/Datapool1/htpc/media/music:/music:shared
-      - /etc/localtime:/etc/localtime:ro
-      - type: tmpfs
-        target: /tmp/cache
-        tmpfs:
-          size: 1000000000
-    devices:
-      - /dev/nvidia0:/dev/nvidia0
-      - /dev/nvidiactl:/dev/nvidiactl
-      - /dev/nvidia-modeset:/dev/nvidia-modeset
-      - /dev/nvidia-uvm:/dev/nvidia-uvm
-      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
-    runtime: nvidia
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frigate.rule=Host(`frigate.fatunicorns.club`)"
-      - "traefik.http.routers.frigate.tls.certresolver=letsencrypt"
-      - "traefik.http.services.frigate.loadbalancer.server.port=5000"
-    networks:
-      - app_network
+  #frigate:
+  #  image: ghcr.io/blakeblackshear/frigate:stable
+  #  container_name: frigate
+  #  hostname: frigate
+  #  restart: unless-stopped
+  #  privileged: true
+  #  shm_size: 128mb
+  #  environment:
+  #    - PUID=${PUID}
+  #    - PGID=${PGID}
+  #    - TZ=${TZ}
+  #    - NVIDIA_VISIBLE_DEVICES=all
+  #    - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+  #  volumes:
+  #    - /mnt/Datapool1/htpc/frigate/config:/config
+  #    - /mnt/Datapool1/htpc/frigate/media:/media/frigate
+  #    - /mnt/Datapool1/htpc/media/movies:/movies:shared
+  #    - /mnt/Datapool1/htpc/media/tv:/tv:shared
+  #    - /mnt/Datapool1/htpc/media/music:/music:shared
+  #    - /etc/localtime:/etc/localtime:ro
+  #    - type: tmpfs
+  #      target: /tmp/cache
+  #      tmpfs:
+  #        size: 1000000000
+  #  devices:
+  #    - /dev/nvidia0:/dev/nvidia0
+  #    - /dev/nvidiactl:/dev/nvidiactl
+  #    - /dev/nvidia-modeset:/dev/nvidia-modeset
+  #    - /dev/nvidia-uvm:/dev/nvidia-uvm
+  #    - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+  #  runtime: nvidia
+  #  labels:
+  #    - "traefik.enable=true"
+  #    - "traefik.http.routers.frigate.rule=Host(`frigate.fatunicorns.club`)"
+  #    - "traefik.http.routers.frigate.tls.certresolver=letsencrypt"
+  #    - "traefik.http.services.frigate.loadbalancer.server.port=5000"
+  #  networks:
+  #    - app_network
     
   # Prowlarr
   prowlarr:
