@@ -66,22 +66,25 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /mnt/Datapool1/htpc/traefik/acme.json:/acme.json
       - /mnt/Datapool1/htpc/traefik/logs:/logs
-    
-    labels:
-      # Disable Traefik auto-discovery for itself since it's not on app_network
-      - "traefik.enable=false"
-    
-    networks:
-      traefik_network:
-        ipv4_address: 192.168.25.10
-
-      extra_hosts:
+    extra_hosts:
       -  "sonarr:192.168.100.13"
       - "radarr:192.168.100.14"
       - "sabnzbd:192.168.100.10"
       - "prowlarr:192.168.100.12"
       - "portainer:192.168.100.15"
       - "overseerr:192.168.100.11"
+    
+    labels:
+      # Disable Traefik auto-discovery for itself since it's not on app_network
+      - "traefik.enable=false"
+    
+
+    
+    networks:
+      traefik_network:
+        ipv4_address: 192.168.25.10
+
+
 
   # SABnzbd
   sabnzbd:
