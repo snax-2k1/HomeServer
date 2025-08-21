@@ -1,0 +1,29 @@
+name: my-soulmask-stack
+
+services:
+  soulmask:
+    image: sknnr/soulmask-dedicated-server:latest
+    container_name: soulmask-server
+    hostname: soulmask
+    restart: unless-stopped
+    ports:
+      - "27050:27050/udp"  # Game port
+      - "27051:27051/udp"  # Query port
+    environment:
+      - SERVER_NAME=My SoulMask Server
+      - GAME_MODE=pve
+      - SERVER_SLOTS=10
+      - SERVER_PASSWORD=changeme123
+      - ADMIN_PASSWORD=adminpass123
+      - GAME_PORT=27050
+      - QUERY_PORT=27051
+      - LISTEN_ADDRESS=0.0.0.0
+      - LEVEL_NAME=Level01_Main
+      - BACKUP_ENABLED=true
+      - BACKUP_INTERVAL=720  # 12 hours in minutes
+      - ENABLE_UPDATE_CHECK=true
+    volumes:
+      - C:/soulmask/data:/home/steam/soulmask
+    stop_grace_period: 90s
+
+# No volumes section needed when using bind mounts

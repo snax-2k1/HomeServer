@@ -75,6 +75,14 @@ services:
       traefik_network:
         ipv4_address: 192.168.25.10
 
+      extra_hosts:
+      -  "sonarr:192.168.100.13"
+      - "radarr:192.168.100.14"
+      - "sabnzbd:192.168.100.10"
+      - "prowlarr:192.168.100.12"
+      - "portainer:192.168.100.15"
+      - "overseerr:192.168.100.11"
+
   # SABnzbd
   sabnzbd:
     image: linuxserver/sabnzbd
